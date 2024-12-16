@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<title>Emoji Planner</title>
+<style>
+html, body {
+  margin:0; padding:0; width:100%; height:100%;
+  font-family:Arial,sans-serif; background:#90caf9; overflow:hidden; touch-action:none;
+}
+
+body {
+  display:flex; flex-direction:column; height:100vh; width:100vw;
+}
+
+/* Main moving clouds (top background) */
+.clouds {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; z-index:-1;
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:5vh 0;
+}
+
+/* Row 1 clouds */
+.clouds-row1 {
+  width:300%; height:12vh; opacity:0.9;
+  background-repeat:repeat-x;
+  background-position:top left;
+  background-size:contain;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="50"><ellipse cx="50" cy="25" rx="30" ry="15" fill="%23ffffff"/><ellipse cx="120" cy="25" rx="30" ry="15" fill="%23ffffff"/></svg>');
+  animation:moveCloudsRow1 40s linear infinite; transform:scale(1.2);
+}
+
+/* Row 2 clouds */
+.clouds-row2 {
+  width:300%; height:12vh; opacity:0.8;
+  background-repeat:repeat-x;
+  background-position:top left;
+  background-size:contain;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="50"><ellipse cx="60" cy="25" rx="25" ry="10" fill="%23ffffff"/></svg>');
+  animation:moveCloudsRow2 45s linear infinite; transform:scale(1.1);
+}
+
+/* Row 3 clouds */
+.clouds-row3 {
+  width:300%; height:12vh; opacity:0.85;
+  background-repeat:repeat-x;
+  background-position:top left;
+  background-size:contain;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="50"><ellipse cx="30" cy="25" rx="25" ry="12" fill="%23ffffff"/><ellipse cx="90" cy="25" rx="25" ry="12" fill="%23ffffff"/></svg>');
+  animation:moveCloudsRow3 50s linear infinite; transform:scale(1.15);
+}
+
+@keyframes moveCloudsRow1 {0%{transform:translateX(0)scale(1.2);}100%{transform:translateX(-15%)scale(1.2);}}
+@keyframes moveCloudsRow2 {0%{transform:translateX(0)scale(1.1);}100%{transform:translateX(15%)scale(1.1);}}
+@keyframes moveCloudsRow3 {0%{transform:translateX(0)scale(1.15);}100%{transform:translateX(-15%)scale(1.15);}}
+
+header {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:1vh 2vw; position:relative; z-index:10;
+}
+h1 {margin:0; font-size:3vh; color:#fff; font-weight:bold;}
+.time-display {font-size:2vh; color:#fff;}
+.reset-alles-btn {background:transparent; border:none; color:#fff; font-size:2vh; font-weight:normal; margin-left:6px; cursor:pointer;}
+
+/* Day sections */
+.day-sections {
+  display:flex; flex-direction:column; padding:1vh 2vw;
+  background:#89cfff; gap:1vh; flex-shrink:0; z-index:10;
+}
+.section-block h2 {
+  margin:0; font-size:2.5vh; color:#fff;
+}
+.placeholder-row {
+  display:flex; align-items:center; gap:2vw; margin-top:1vh;
+}
+.day-sections .placeholder {
+  width:8vh; height:8vh; border:none; border-radius:1vh;
+  background:#89cfff; display:flex; align-items:center; justify-content:center; position:relative;
+  transition:border-color 0.2s,box-shadow 0.2s,transform 0.2s;
+}
+.day-sections .placeholder.empty::after {
+  content:"?"; opacity:0.8; font-size:3vh; color:#fff;
+}
+.day-sections .placeholder.highlight {
+  box-shadow:0 0 1vh #2196f3; transform:scale(1.05);
+}
+.add-btn {
+  width:8vh; height:8vh; border:none; border-radius:1vh; font-size:3vh; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; box-shadow:0 0 0.5vh #ccc; color:#fff; background:#4a90e2;
+}
+.add-btn:hover,.add-btn:focus {background:#6ab0f8; outline:none;}
+.day-sections .emoji-item { border:none; background:transparent; }
+
+/* Huiswerk button */
+.huiswerk-btn {
+  display:inline-flex; align-items:center; justify-content:center; margin:0.5vh 2vw; padding:0.5vh 1vw;
+  border:none; border-radius:1vh; font-size:2.5vh; color:#fff; background:#f44336;
+  cursor:pointer; transition:background 0.3s; position:relative; z-index:10;
+}
+.huiswerk-btn.active {
+  background:#4caf50; animation:housewagBounce 0.7s ease-out 1;
+}
+@keyframes housewagBounce {
+  0%{transform:scale(1);}
+  30%{transform:scale(1.2) rotate(5deg);}
+  60%{transform:scale(1) rotate(-5deg);}
+  100%{transform:scale(1) rotate(0deg);}
+}
+
+.search-container {margin:0.5vh 2vw;flex-shrink:0;z-index:10;}
+.search-bar {
+  width:100%; padding:1vh; font-size:2vh; border-radius:1vh; border:1px solid #ccc; outline:none;
+}
+
+/* Emoji deck area on baby blue background */
+main {
+  flex:1; display:flex; align-items:flex-start; justify-content:center;
+  background:#89cfff; box-sizing:border-box; overflow:hidden; z-index:10;
+  padding:1vh 2vw 0.5vh 2vw;
+}
+.emoji-deck {display:grid; grid-gap:0.5vh;}
+.emoji-item {
+  font-size:3vh; cursor:grab; user-select:none; display:flex; align-items:center; justify-content:center;
+  border-radius:0.5vh; border:2px solid #89cfff;
+  background:transparent; transition:background 0.2s,transform 0.2s; touch-action:none;
+}
+.emoji-item:active {cursor:grabbing;}
+.emoji-item:hover,.emoji-item:focus {background:rgba(255,255,255,0.5); outline:none;}
+
+/* Arrow buttons for categories at top row */
+.arrow-left,.arrow-right {
+  font-size:3vh; cursor:pointer; user-select:none; color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  background:#89cfff; border:2px solid #fff; border-radius:1vh; box-shadow:0 0 0.5vh rgba(0,0,0,0.3);
+  transition:background 0.2s;
+}
+.arrow-left:hover,.arrow-right:hover {background:#b3daff;}
+
+/* Dragging */
+.dragging {
+  position:fixed; z-index:9999; pointer-events:none;
+  background:none; border:none;
+}
+.dragging.magnet {transform:scale(1.2); transition:transform 0.1s;}
+
+/* Reward Popup & Confetti */
+.reward-popup {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0);
+  background:rgba(255,255,255,0.9); border-radius:2vh; padding:2vh 4vw;
+  box-shadow:0 0 1vh rgba(0,0,0,0.2); z-index:10000; text-align:center; pointer-events:none;
+  transition:transform 0.3s ease-out;
+}
+.reward-popup.show {transform:translate(-50%,-50%) scale(1);}
+.reward-content {display:flex; flex-direction:column; align-items:center; gap:1vh;}
+.reward-text {font-size:3vh; font-weight:bold; color:#4caf50;}
+.reward-emoji {font-size:4vh;}
+
+.confetti-container {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; z-index:9999; overflow:hidden; display:none;
+}
+.confetti {
+  position:absolute; width:0.5vh; height:0.5vh; border-radius:50%;
+  animation:fallConfetti 3s linear forwards;
+}
+@keyframes fallConfetti {
+  0%{transform:translateY(-10vh);}
+  100%{transform:translateY(110vh);}
+}
+
+/* Tutorial Popup with pixel-art background */
+.tutorial-popup {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  background:rgba(0,0,0,0.5); z-index:20000; display:flex; align-items:center; justify-content:center; text-align:center; padding:5vw;
+}
+
+.tutorial-content {
+  position:relative;
+  background:#89cfff;
+  border:4px solid #fff; border-radius:2vh;
+  padding:3vh 5vw; box-shadow:0 0 2vh rgba(0,0,0,0.3);
+  color:#333; animation:popIn 0.5s ease-out;
+  overflow:hidden;
+  max-width:90vw; /* Ensures the content doesn't overflow horizontally */
+  box-sizing: border-box;
+}
+
+@media (orientation: portrait) {
+  .tutorial-content {
+    padding:4vh 6vw; /* Adjust padding for better spacing in portrait */
+  }
+  .tutorial-title {
+    font-size:4vh; /* Slightly larger title for readability */
+  }
+  .tutorial-step {
+    font-size:2.5vh; /* Increase font size for steps */
+  }
+}
+
+@media (orientation: landscape) {
+  .tutorial-content {
+    max-width:70vw; /* Adjust max-width for landscape */
+  }
+  .tutorial-title {
+    font-size:3.5vh;
+  }
+  .tutorial-step {
+    font-size:2.2vh;
+  }
+}
+
+/* Pixel-art clouds inside tutorial box */
+.tutorial-content::before {
+  content:"";
+  position:absolute; top:0; left:0; width:200%; height:200%;
+  background:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="%2389cfff"/><rect x="4" y="4" width="2" height="2" fill="%23ffffff"/><rect x="10" y="4" width="3" height="2" fill="%23ffffff"/><rect x="6" y="10" width="4" height="3" fill="%23ffffff"/></svg>') repeat;
+  background-size:16px 16px;
+  animation:movePixelClouds 60s linear infinite;
+  opacity:0.3;
+  z-index:-1;
+}
+
+@keyframes movePixelClouds {
+  0% {transform:translateX(0);}
+  100% {transform:translateX(-50%);}
+}
+
+@keyframes popIn {
+  0%{transform:scale(0.5);opacity:0;}
+  100%{transform:scale(1);opacity:1;}
+}
+.tutorial-title {
+  font-size:3vh; font-weight:bold; margin-bottom:2vh; text-shadow:0 0 0.5vh rgba(0,0,0,0.3); color:#fff;
+}
+.tutorial-step {
+  font-size:2.2vh; margin:1vh 0; line-height:1.3; color:#fff;
+}
+.tutorial-close {
+  margin-top:2vh; font-size:2vh; padding:1vh 2vw; border:none; border-radius:1vh; background:#4caf50; color:#fff; cursor:pointer;
+}
+
+/* Tutorial Overlays - enhanced scenes */
+.tutorial-overlays {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  pointer-events:none; z-index:20001; display:none;
+}
+
+.ghost-overlay, .finger-overlay, .speech-bubble {
+  position:absolute; transition:all 1s cubic-bezier(0.25,0.1,0.25,1); opacity:0; font-size:3vh;
+  filter:drop-shadow(0 0 0.5vh rgba(0,0,0,0.5));
+}
+.ghost-overlay {font-size:4vh;}
+.ghost-overlay.floating {
+  animation:ghostFloat 2s ease-in-out infinite alternate;
+}
+@keyframes ghostFloat {
+  0%{transform:translateY(0)}
+  100%{transform:translateY(-1vh)}
+}
+
+.finger-overlay {font-size:4vh;}
+
+.speech-bubble {
+  background:#fff; color:#333; padding:1vh 2vw; border-radius:1vh; font-size:2vh; box-shadow:0 0 1vh rgba(0,0,0,0.2);
+}
+
+/* Additional Animations for Tutorial Scene */
+@keyframes ghostMoveRight {
+  0% { left: 10vw; top: 70vh; }
+  100% { left: 70vw; top: 70vh; }
+}
+
+@keyframes ghostTapArrow {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes ghostMoveToEmoji {
+  0% { left: 70vw; top: 70vh; }
+  100% { left: 50vw; top: 50vh; }
+}
+
+@keyframes ghostMoveToPlus {
+  0% { left: 50vw; top: 50vh; }
+  100% { left: 20vw; top: 70vh; }
+}
+
+@keyframes ghostMoveToReset {
+  0% { left: 20vw; top: 70vh; }
+  100% { left: 80vw; top: 80vh; }
+}
+
+.ghost-animated {
+  position: absolute;
+  left: 10vw;
+  top: 70vh;
+  font-size:4vh;
+  animation:ghostMoveRight 2s forwards, ghostTapArrow 2s 2s forwards, ghostMoveToEmoji 2s 4s forwards, ghostMoveToPlus 2s 6s forwards, ghostMoveToReset 2s 8s forwards;
+}
+
+.hide {
+  display: none;
+}
+</style>
+</head>
+<body>
+<div class="clouds" aria-hidden="true">
+  <div class="clouds-row clouds-row1"></div>
+  <div class="clouds-row clouds-row2"></div>
+  <div class="clouds-row clouds-row3"></div>
+</div>
+
+<header>
+  <h1>Emoji Planner</h1>
+  <div style="display:flex; align-items:center;">
+    <div class="time-display" aria-label="Current time"></div>
+    <button class="reset-alles-btn" aria-label="Reset all placeholders">reset alles</button>
+  </div>
+</header>
+
+<section class="day-sections" aria-label="Day time sections">
+  <div class="section-block" aria-label="Ochtend section">
+    <h2>Ochtend</h2>
+    <div class="placeholder-row">
+      <div class="placeholder empty" aria-label="Empty placeholder" tabindex="0"></div>
+      <button class="add-btn" aria-label="Add new placeholder">+</button>
+    </div>
+  </div>
+  <div class="section-block" aria-label="Middag section">
+    <h2>Middag</h2>
+    <div class="placeholder-row">
+      <div class="placeholder empty" aria-label="Empty placeholder" tabindex="0"></div>
+      <button class="add-btn" aria-label="Add new placeholder">+</button>
+    </div>
+  </div>
+  <div class="section-block" aria-label="Avond section">
+    <h2>Avond</h2>
+    <div class="placeholder-row">
+      <div class="placeholder empty" aria-label="Empty placeholder" tabindex="0"></div>
+      <button class="add-btn" aria-label="Add new placeholder">+</button>
+    </div>
+  </div>
+</section>
+
+<button class="huiswerk-btn" aria-label="Toggle huiswerk mode">Huiswerk</button>
+
+<div class="search-container" aria-label="Search and filter emojis">
+  <input type="text" class="search-bar" placeholder="Search emojis..." aria-label="Search emojis by name"/>
+</div>
+
+<main aria-label="Emoji deck">
+  <div class="emoji-deck" aria-live="polite"></div>
+</main>
+
+<div class="reward-popup">
+  <div class="reward-content">
+    <div class="reward-text">Goed Gedaan!</div>
+    <div class="reward-emoji">🎂</div>
+  </div>
+</div>
+
+<div class="confetti-container"></div>
+
+<div class="tutorial-popup">
+  <div class="tutorial-content">
+    <h2 class="tutorial-title">Welcome to Emoji Planner!</h2>
+    <p class="tutorial-step">👻 Deze geest laat zien hoe je emojis kunt slepen en plaatsen!</p>
+    <p class="tutorial-step">👉 Deze vinger laat zien hoe je dubbel tikt om te verwijderen!</p>
+    <p class="tutorial-step">💡 Leer hoe je "reset alles" gebruikt om je plan te legen!</p>
+    <p class="tutorial-step">Volg de pijlen en animaties om alle functies te begrijpen.</p>
+    <button class="tutorial-close" aria-label="Close tutorial">Got it!</button>
+    <div class="ghost-animated">👻</div>
+  </div>
+</div>
+
+<div class="tutorial-overlays">
+  <div class="ghost-overlay">👻</div>
+  <div class="finger-overlay">👉</div>
+  <div class="speech-bubble">druk op deze knop als je alle emojis in een keer wilt verwijderen</div>
+</div>
+
+<script>
+// Full JavaScript code implementing categories, search, drag-and-drop, Huiswerk, etc.
+
+const categories=["events","emotion","travel","art","tech","objects","animals","houses"];
+let currentCategoryIndex=0; 
+
+// Base sets of emojis (at least 10 per category, repeated to reach ~75)
+const baseEvents=[{char:"🎉",name:"feest party"},{char:"🎂",name:"taart cake"},{char:"🎆",name:"vuurwerk fireworks"},{char:"🎇",name:"sterretje sparkler"},{char:"🎈",name:"ballon balloon"},{char:"🎊",name:"confetti"},{char:"🥳",name:"feestgezicht partying"},{char:"🎃",name:"pompoen pumpkin"},{char:"🎄",name:"kerstboom christmas tree"},{char:"🎅",name:"kerstman santa"}];
+const baseEmotion=[{char:"😀",name:"glimlach"},{char:"😃",name:"lach smile"},{char:"😄",name:"breed lach big smile"},{char:"😁",name:"big grin"},{char:"😂",name:"tranen van het lachen tears of joy"},{char:"🤣",name:"rol lachen rofl"},{char:"😊",name:"verlegen lach shy smile"},{char:"🥰",name:"liefdevol loving"},{char:"😍",name:"verliefd in love"},{char:"🤩",name:"onder de indruk impressed"}];
+const baseTravel=[{char:"✈️",name:"vliegtuig airplane"},{char:"🚂",name:"stoomtrein steam train"},{char:"🚆",name:"trein train"},{char:"🚗",name:"auto car"},{char:"🚙",name:"auto2 suv"},{char:"🚌",name:"bus"}];
+const baseArt=[{char:"🎨",name:"verf palet paint palette"},{char:"🖌️",name:"kwast brush"},{char:"🖍️",name:"krijt crayon"},{char:"🎸",name:"gitaar guitar"},{char:"🎻",name:"viool violin"},{char:"🥁",name:"drum"},{char:"🎹",name:"piano"}];
+const baseTech=[{char:"💻",name:"laptop"},{char:"📱",name:"telefoon phone"},{char:"📷",name:"camera"},{char:"🎥",name:"video camera"},{char:"⌨️",name:"toetsenbord keyboard"}];
+const baseObjects=[{char:"📦",name:"doos box"},{char:"🎁",name:"cadeau gift"},{char:"🛍️",name:"winkel tas shopping bag"},{char:"🎀",name:"strik ribbon"},{char:"📚",name:"boeken books"},{char:"💼",name:"koffer briefcase"}];
+const baseAnimals=[{char:"🐶",name:"hond dog"},{char:"🐱",name:"kat cat"},{char:"🐭",name:"muis mouse"},{char:"🐹",name:"hamster"},{char:"🐰",name:"konijn rabbit"},{char:"🦊",name:"vos fox"}];
+const baseHouses=[{char:"🏠",name:"huis house"},{char:"🏡",name:"huis met tuin house with garden"},{char:"🏘️",name:"huizenblok housing"},{char:"🏯",name:"kasteel oosters castle"},{char:"🏰",name:"kasteel castle"}];
+
+function makeArray(base){
+  let arr=[];
+  for(let i=0;i<75;i++){
+    arr.push(base[i%base.length]);
+  }
+  return arr;
+}
+
+const EMOJIS={
+  events: makeArray(baseEvents),
+  emotion: makeArray(baseEmotion),
+  travel: makeArray(baseTravel),
+  art: makeArray(baseArt),
+  tech: makeArray(baseTech),
+  objects: makeArray(baseObjects),
+  animals: makeArray(baseAnimals),
+  houses: makeArray(baseHouses)
+};
+
+const deck=document.querySelector('.emoji-deck');
+const huiswerkBtn=document.querySelector('.huiswerk-btn');
+const searchInput=document.querySelector('.search-bar');
+const addButtons=document.querySelectorAll('.add-btn');
+const timeDisplay=document.querySelector('.time-display');
+const rewardPopup=document.querySelector('.reward-popup');
+const resetAllesBtn=document.querySelector('.reset-alles-btn');
+const tutorialPopup=document.querySelector('.tutorial-popup');
+const tutorialCloseBtn=tutorialPopup.querySelector('.tutorial-close');
+const tutorialOverlays=document.querySelector('.tutorial-overlays');
+const ghostOverlay=document.querySelector('.ghost-overlay');
+const fingerOverlay=document.querySelector('.finger-overlay');
+const speechBubble=document.querySelector('.speech-bubble');
+const confettiContainer=document.querySelector('.confetti-container');
+
+let draggedEmoji=null;
+let dragSourcePlaceholder=null;
+let lastTapTime=0; 
+const doubleTapThreshold=300;
+let filteredEmojis=[];
+
+let tutorialShown=localStorage.getItem('tutorialShown');
+
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!tutorialShown){
+    tutorialPopup.style.display='flex';
+    startFullTutorial();
+  }else{
+    tutorialPopup.style.display='none';
+  }
+});
+
+tutorialCloseBtn.addEventListener('click',()=>{
+  tutorialPopup.style.display='none';
+  localStorage.setItem('tutorialShown','true');
+});
+
+function startFullTutorial(){
+  const tutorialContent = document.querySelector('.tutorial-content');
+  const ghost = document.querySelector('.ghost-animated');
+  
+  // Sequence of animations
+  // Using Promises to handle sequence
+  sequence([
+    () => animateGhostMove(ghost, '10vw', '70vh', '70vw', '70vh', 'ghostMoveRight'),
+    () => animateGhostTap(ghost, 'ghostTapArrow'),
+    () => revealSecondCategory(),
+    () => animateGhostMove(ghost, '70vw', '70vh', '50vw', '50vh', 'ghostMoveToEmoji'),
+    () => pickEmojiAndPlace(),
+    () => animateGhostMove(ghost, '50vw', '50vh', '20vw', '70vh', 'ghostMoveToPlus'),
+    () => tapAddButton(),
+    () => animateGhostMove(ghost, '20vw', '70vh', '80vw', '80vh', 'ghostMoveToReset'),
+    () => tapResetAllesButton(),
+    () => endTutorial()
+  ]);
+}
+
+function sequence(tasks){
+  return tasks.reduce((promise, task) => promise.then(task), Promise.resolve());
+}
+
+function animateGhostMove(ghost, fromLeft, fromTop, toLeft, toTop, animationName){
+  return new Promise(resolve => {
+    ghost.style.left = fromLeft;
+    ghost.style.top = fromTop;
+    ghost.classList.remove('hide');
+    setTimeout(()=>{
+      ghost.style.transition = 'all 2s ease';
+      ghost.style.left = toLeft;
+      ghost.style.top = toTop;
+      setTimeout(()=>{
+        resolve();
+      },2000);
+    },500);
+  });
+}
+
+function animateGhostTap(ghost, animationName){
+  return new Promise(resolve => {
+    ghost.style.transform = 'scale(1.2)';
+    setTimeout(()=>{
+      ghost.style.transform = 'scale(1)';
+      resolve();
+    },1000);
+  });
+}
+
+function revealSecondCategory(){
+  return new Promise(resolve => {
+    const rightArrow = document.querySelector('.arrow-right');
+    rightArrow.click();
+    setTimeout(()=>{
+      resolve();
+    },1000);
+  });
+}
+
+function pickEmojiAndPlace(){
+  return new Promise(resolve => {
+    const firstEmoji = deck.querySelector('.emoji-item');
+    if(firstEmoji){
+      firstEmoji.click(); // Simulate tap to drag
+      // Simulate placing emoji in first placeholder
+      const firstPlaceholder = document.querySelector('.section-block[aria-label="Ochtend section"] .placeholder');
+      placeEmojiInPlaceholder(firstPlaceholder, firstEmoji.textContent);
+      setTimeout(()=>{
+        resolve();
+      },1000);
+    } else {
+      resolve();
+    }
+  });
+}
+
+function tapAddButton(){
+  return new Promise(resolve => {
+    const addBtn = document.querySelector('.section-block[aria-label="Ochtend section"] .add-btn');
+    addBtn.click();
+    setTimeout(()=>{
+      resolve();
+    },1000);
+  });
+}
+
+function tapResetAllesButton(){
+  return new Promise(resolve => {
+    const resetBtn = document.querySelector('.reset-alles-btn');
+    resetBtn.click();
+    setTimeout(()=>{
+      resolve();
+    },1000);
+  });
+}
+
+function endTutorial(){
+  return new Promise(resolve => {
+    const tutorialPopup = document.querySelector('.tutorial-popup');
+    tutorialPopup.style.display='none';
+    resolve();
+  });
+}
+
+function triggerConfetti(){
+  confettiContainer.innerHTML='';
+  confettiContainer.style.display='block';
+  for(let i=0;i<50;i++){
+    const c=document.createElement('div');
+    c.className='confetti';
+    c.style.left=Math.random()*100+'%';
+    c.style.background=`hsl(${Math.random()*360},100%,50%)`;
+    c.style.animationDelay=Math.random()+'s';
+    confettiContainer.appendChild(c);
+  }
+  setTimeout(()=>{
+    confettiContainer.style.display='none';
+    confettiContainer.innerHTML='';
+  },4000);
+}
+
+function prevCategory(){
+  currentCategoryIndex=(currentCategoryIndex-1+categories.length)%categories.length;
+  filterEmojis();
+}
+function nextCategory(){
+  currentCategoryIndex=(currentCategoryIndex+1)%categories.length;
+  filterEmojis();
+}
+
+function filterEmojis(){
+  const searchTerm=searchInput.value.toLowerCase();
+  const cat=categories[currentCategoryIndex];
+  let arr=EMOJIS[cat];
+  arr=arr.filter(e=>e.name.toLowerCase().includes(searchTerm));
+  filteredEmojis=arr;
+  displayEmojis();
+}
+
+function displayEmojis(){
+  deck.innerHTML='';
+  const arr=filteredEmojis;
+  const total=arr.length;
+
+  const viewportW=window.innerWidth;
+  const viewportH=window.innerHeight;
+  const topRowCount=Math.min(4,total);
+  const remainder=total>4?(total-4):0;
+  const rowsBelow=remainder>0?Math.ceil(remainder/6):0;
+  const totalRows=1+rowsBelow;
+
+  let emojiSize=viewportW/10;
+  for(let size=viewportW/5;size>1;size--){
+    if(totalRows*(size*1.5)<viewportH && 6*(size*1.5)<viewportW){emojiSize=size;break;}
+  }
+
+  deck.style.gridTemplateColumns='repeat(6,auto)';
+
+  const leftArrow=document.createElement('div');
+  leftArrow.className='arrow-left emoji-item';
+  leftArrow.textContent='◀️';
+  leftArrow.style.border='2px solid #fff';
+  leftArrow.addEventListener('click',prevCategory);
+  deck.appendChild(leftArrow);
+
+  for(let i=0;i<4;i++){
+    if(i<topRowCount){
+      const e=arr[i];
+      const span=document.createElement('span');
+      span.classList.add('emoji-item');
+      span.textContent=e.char;
+      span.setAttribute('aria-label',e.name);
+      span.setAttribute('tabindex','0');
+      span.addEventListener('touchstart',onTouchStartFromDeck);
+      deck.appendChild(span);
+    } else {
+      const emptyDiv=document.createElement('div');
+      emptyDiv.style.visibility='hidden';
+      deck.appendChild(emptyDiv);
+    }
+  }
+
+  const rightArrow=document.createElement('div');
+  rightArrow.className='arrow-right emoji-item';
+  rightArrow.textContent='▶️';
+  rightArrow.style.border='2px solid #fff';
+  rightArrow.addEventListener('click',nextCategory);
+  deck.appendChild(rightArrow);
+
+  let index=4;
+  for(let r=0;r<rowsBelow;r++){
+    for(let c=0;c<6;c++){
+      if(index<total){
+        const e=arr[index++];
+        const span=document.createElement('span');
+        span.classList.add('emoji-item');
+        span.textContent=e.char;
+        span.setAttribute('aria-label',e.name);
+        span.setAttribute('tabindex','0');
+        span.addEventListener('touchstart',onTouchStartFromDeck);
+        deck.appendChild(span);
+      } else {
+        const emptyDiv=document.createElement('div');
+        emptyDiv.style.visibility='hidden';
+        deck.appendChild(emptyDiv);
+      }
+    }
+  }
+
+  const allEmojis=deck.querySelectorAll('.emoji-item');
+  allEmojis.forEach(e=>{
+    e.style.width=emojiSize+'px';
+    e.style.height=emojiSize+'px';
+    e.style.fontSize=(emojiSize*0.5)+'px';
+  });
+}
+
+function onTouchStartFromDeck(e){startDragging(e,false);}
+function onTouchStartFromPlaceholder(e){
+  const placeholder=e.target.closest('.placeholder');
+  if(!placeholder || placeholder.classList.contains('empty'))return;
+  const currentTime=Date.now();
+  if(currentTime-lastTapTime<300){
+    clearPlaceholder(placeholder);
+    lastTapTime=0;return;
+  }
+  lastTapTime=currentTime;
+  dragSourcePlaceholder=placeholder;
+  startDragging(e,true,placeholder);
+}
+
+function startDragging(e,fromPlaceholder){
+  const target=e.target;
+  if(!target.classList.contains('emoji-item'))return;
+  if(navigator.vibrate)navigator.vibrate(10);
+  draggedEmoji=target.cloneNode(true);
+  draggedEmoji.classList.add('dragging');
+  draggedEmoji.style.border='none';
+  document.body.appendChild(draggedEmoji);
+  const initialTouch=e.touches[0];
+  const moveAt=(x,y)=>{
+    draggedEmoji.style.left=(x-draggedEmoji.offsetWidth/2)+'px';
+    draggedEmoji.style.top=(y-draggedEmoji.offsetHeight/2)+'px';
+  };
+  moveAt(initialTouch.pageX,initialTouch.pageY);
+
+  const touchMoveHandler=ev=>{
+    const t=ev.touches[0];
+    moveAt(t.pageX,t.pageY);
+    checkMagnetEffect(t);
+  };
+  const touchEndHandler=ev=>{
+    dropEmoji(ev,fromPlaceholder);
+    draggedEmoji.remove(); draggedEmoji=null; dragSourcePlaceholder=null;
+    document.removeEventListener('touchmove',touchMoveHandler);
+    document.removeEventListener('touchend',touchEndHandler);
+  };
+
+  document.addEventListener('touchmove',touchMoveHandler,{passive:false});
+  document.addEventListener('touchend',touchEndHandler,{passive:false});
+}
+
+function getPlaceholders(){return document.querySelectorAll('.placeholder');}
+function checkMagnetEffect(touch){
+  let magnetDetected=false;
+  const placeholders=getPlaceholders();
+  placeholders.forEach(ph=>{
+    const rect=ph.getBoundingClientRect();
+    const distance=Math.hypot(touch.clientX-(rect.left+rect.width/2),touch.clientY-(rect.top+rect.height/2));
+    if(distance<80){ph.classList.add('highlight'); draggedEmoji.classList.add('magnet'); magnetDetected=true;}
+    else{ph.classList.remove('highlight');}
+  });
+  if(!magnetDetected)draggedEmoji.classList.remove('magnet');
+}
+
+function dropEmoji(event,fromPlaceholder){
+  if(navigator.vibrate)navigator.vibrate(20);
+  const touch=event.changedTouches[0];
+  const placeholders=getPlaceholders();
+  let chosenPlaceholder=null; let minDistance=Infinity;
+  placeholders.forEach(ph=>{
+    const rect=ph.getBoundingClientRect();
+    const distance=Math.hypot(touch.clientX-(rect.left+rect.width/2),touch.clientY-(rect.top+rect.height/2));
+    if(distance<80 && distance<minDistance){minDistance=distance; chosenPlaceholder=ph;}
+    ph.classList.remove('highlight');
+  });
+  if(chosenPlaceholder){
+    if(fromPlaceholder && dragSourcePlaceholder)clearPlaceholder(dragSourcePlaceholder);
+    placeEmojiInPlaceholder(chosenPlaceholder,draggedEmoji.textContent);
+  } else if(fromPlaceholder && dragSourcePlaceholder){
+    placeEmojiInPlaceholder(dragSourcePlaceholder,draggedEmoji.textContent);
+  }
+}
+
+function clearPlaceholder(placeholder){
+  placeholder.innerText='';
+  placeholder.classList.add('empty');
+  placeholder.setAttribute('aria-label','Empty placeholder');
+}
+
+function placeEmojiInPlaceholder(placeholder,emojiChar){
+  placeholder.innerHTML='';
+  placeholder.classList.remove('empty');
+  placeholder.setAttribute('aria-label','Contains emoji '+emojiChar);
+  const span=document.createElement('span');
+  span.classList.add('emoji-item');
+  span.textContent=emojiChar;
+  span.setAttribute('aria-label',emojiChar);
+  span.setAttribute('tabindex','0');
+  span.addEventListener('touchstart',onTouchStartFromPlaceholder);
+  span.style.border='none';
+  placeholder.appendChild(span);
+}
+
+// Huiswerk Button
+huiswerkBtn.addEventListener('click',()=>{
+  huiswerkBtn.classList.toggle('active');
+  if(huiswerkBtn.classList.contains('active')){
+    huiswerkBtn.textContent='Huiswerk 👍';
+    showHuiswerkAlert();
+  } else {
+    huiswerkBtn.textContent='Huiswerk';
+  }
+});
+
+function showHuiswerkAlert(){
+  showRewardPopup();
+  triggerConfetti();
+  setTimeout(()=>{rewardPopup.classList.remove('show');},2000);
+}
+
+function showRewardPopup(){
+  rewardPopup.classList.add('show');
+}
+
+// Reset Alles
+resetAllesBtn.addEventListener('click',()=>{
+  getPlaceholders().forEach(ph=>clearPlaceholder(ph));
+});
+
+// Add New Placeholder
+addButtons.forEach(addBtn=>{
+  addBtn.addEventListener('click',()=>{
+    addPlaceholderRow(addBtn);
+  });
+});
+function addPlaceholderRow(btn){
+  const row=btn.parentElement;
+  const newPlaceholder=document.createElement('div');
+  newPlaceholder.classList.add('placeholder','empty');
+  newPlaceholder.setAttribute('aria-label','Empty placeholder');
+  newPlaceholder.setAttribute('tabindex','0');
+  newPlaceholder.style.background='#89cfff';
+  row.insertBefore(newPlaceholder,btn);
+}
+
+// Time Display
+function updateTime(){
+  const now=new Date();
+  timeDisplay.textContent=now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+}
+setInterval(updateTime,1000);
+updateTime();
+
+// Initial setup
+currentCategoryIndex=0;
+searchInput.addEventListener('input',filterEmojis);
+filterEmojis();
+</script>
+</body>
+</html>
